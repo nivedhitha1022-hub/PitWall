@@ -3,38 +3,26 @@ import plotly.express as px
 
 
 def render(subs, sess, mrr, rfm):
-
-    st.markdown("## 📋 Descriptive Analytics")
-
-    st.markdown("---")
+    st.subheader("Descriptive Analytics")
 
     active = subs[subs["churned"] == "No"]
 
-    col1, col2, col3, col4 = st.columns(4)
-
-    col1.metric("Total Subscribers", len(subs))
-    col2.metric("Active Subscribers", len(active))
-    col3.metric("Churn Rate %", round(subs["churned_bool"].mean() * 100, 2))
-    col4.metric("Avg NPS", round(subs["nps_score"].mean(), 2))
+    c1, c2, c3, c4 = st.columns(4)
+    c1.metric("Total Subscribers", int(len(subs)))
+    c2.metric("Active Subscribers", int(len(active)))
+    c3.metric("Churn Rate %", round(float(subs["churned_bool"].mean() * 100), 2))
+    c4.metric("Avg NPS", round(float(subs["nps_score"].mean()), 2))
 
     st.markdown("---")
-
-    st.subheader("Subscribers by Plan")
 
     plan_counts = subs["plan"].value_counts().reset_index()
     plan_counts.columns = ["plan", "count"]
-
-    fig = px.bar(plan_counts, x="plan", y="count", color="plan")
-
-    st.plotly_chart(fig, use_container_width=True)
+    fig1 = px.bar(plan_counts, x="plan", y="count", title="Subscribers by Plan")
+    st.plotly_chart(fig1, use_container_width=True)
 
     st.markdown("---")
 
-    st.subheader("RFM Segments")
-
-    seg = rfm["segment"].value_counts().reset_index()
-    seg.columns = ["segment", "count"]
-
-    fig2 = px.bar(seg, x="segment", y="count", color="segment")
-
+    seg_counts = rfm["segment"].value_counts().reset_index()
+    seg_counts.columns = ["segment", "count"]
+    fig2 = px.bar(seg_counts, x="segment", y="count", title="RFM Segments")
     st.plotly_chart(fig2, use_container_width=True)
