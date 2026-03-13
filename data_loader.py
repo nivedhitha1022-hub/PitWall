@@ -2,16 +2,15 @@ import pandas as pd
 import numpy as np
 from pathlib import Path
 
-# Path to dataset (same folder as the app)
-DATA_PATH = Path(__file__).parent / "PitWall_Analytics_Dataset.xlsx"
-
 def load_data():
+
+    DATA_PATH = Path(__file__).parent / "PitWall_Analytics_Dataset.xlsx"
 
     xl = pd.read_excel(DATA_PATH, sheet_name=None, header=1)
 
-    # -----------------------------
-    # Subscribers Sheet
-    # -----------------------------
+    # -----------------------
+    # Subscribers
+    # -----------------------
     subs = xl["Subscribers"].copy()
     subs.columns = [c.lower().replace(" ", "_") for c in subs.columns]
 
@@ -53,15 +52,14 @@ def load_data():
         "Paddock Club": 3
     })
 
-    # -----------------------------
-    # Engagement Sessions Sheet
-    # -----------------------------
+    # -----------------------
+    # Engagement Sessions
+    # -----------------------
     sess = xl["Engagement Sessions"].copy()
     sess.columns = [c.lower().replace(" ", "_") for c in sess.columns]
 
     sess["session_date"] = pd.to_datetime(sess["session_date"], errors="coerce")
     sess["session_month"] = sess["session_date"].dt.to_period("M").astype(str)
-
     sess["is_weekend"] = sess["session_date"].dt.dayofweek >= 5
 
     sess["engagement_tier"] = pd.cut(
@@ -70,28 +68,28 @@ def load_data():
         labels=["Low", "Medium", "High"]
     )
 
-    # -----------------------------
-    # Revenue Sheet
-    # -----------------------------
+    # -----------------------
+    # Revenue MRR
+    # -----------------------
     mrr = xl["Revenue MRR"].copy()
     mrr.columns = [c.lower().replace(" ", "_") for c in mrr.columns]
 
     mrr["month_dt"] = pd.to_datetime(mrr["month"], format="%Y-%m", errors="coerce")
 
     mrr["churn_rate_pct"] = (
-        mrr["churned_subscribers"]
-        / (mrr["active_subscribers"] + mrr["churned_subscribers"]).replace(0, np.nan)
+        mrr["churned_subscribers"] /
+        (mrr["active_subscribers"] + mrr["churned_subscribers"]).replace(0, np.nan)
         * 100
     ).round(2)
 
     mrr["arpu_usd"] = (
-        mrr["mrr_usd"]
-        / mrr["active_subscribers"].replace(0, np.nan)
+        mrr["mrr_usd"] /
+        mrr["active_subscribers"].replace(0, np.nan)
     ).round(2)
 
-    # -----------------------------
-    # RFM Analysis
-    # -----------------------------
+    # -----------------------
+    # RFM Segmentation
+    # -----------------------
     snapshot = pd.Timestamp("2024-12-31")
 
     last_sess = sess.groupby("subscriber_id")["session_date"].max().reset_index()
@@ -112,7 +110,7 @@ def load_data():
             "churned_bool",
             "nps_category",
             "age_group",
-            "acquisition_channel"
+            "acquisition_channel",
         ]
     ].merge(last_sess, on="subscriber_id", how="left").merge(freq, on="subscriber_id", how="left")
 
@@ -120,15 +118,14 @@ def load_data():
     rfm["frequency"] = rfm["frequency"].fillna(0)
     rfm["monetary"] = rfm["lifetime_revenue_usd"].fillna(0)
 
-    rfm["r_score"] = pd.qcut(rfm["recency_days"].rank(method="first"), q=4, labels=[4,3,2,1]).astype(int)
-    rfm["f_score"] = pd.qcut(rfm["frequency"].rank(method="first"), q=4, labels=[1,2,3,4]).astype(int)
-    rfm["m_score"] = pd.qcut(rfm["monetary"].rank(method="first"), q=4, labels=[1,2,3,4]).astype(int)
+    rfm["r_score"] = pd.qcut(rfm["recency_days"].rank(method="first"), 4, labels=[4,3,2,1]).astype(int)
+    rfm["f_score"] = pd.qcut(rfm["frequency"].rank(method="first"), 4, labels=[1,2,3,4]).astype(int)
+    rfm["m_score"] = pd.qcut(rfm["monetary"].rank(method="first"), 4, labels=[1,2,3,4]).astype(int)
 
     rfm["rfm_score"] = rfm["r_score"] + rfm["f_score"] + rfm["m_score"]
 
     def segment(row):
-        s = row["rfm_score"]
-        r = row["r_score"]
+        s, r = row["rfm_score"], row["r_score"]
 
         if s >= 10:
             return "Champion"
