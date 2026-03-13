@@ -4,7 +4,7 @@ from pathlib import Path
 
 DATA_PATH = Path(__file__).parent / "data" / "PitWall_Analytics_Dataset.xlsx"
 
-def load_data():
+GITHUB_URL = "https://raw.githubusercontent.com/YOUR_GITHUB_USERNAME/YOUR_REPO_NAME/main/data/PitWall_Analytics_Dataset.xlsx"
     xl = pd.read_excel(DATA_PATH, sheet_name=None, header=1)
 
     subs = xl["Subscribers"].copy()
